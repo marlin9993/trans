@@ -177,6 +177,7 @@ trans status
 - `.trans/task.json`：本次翻译任务
 - `.trans/result.json`：Claude Code 写回的翻译结果
 - `.trans_cache/`：快照和历史翻译缓存
+- `.trans/logs/*.jsonl`：审计日志，包含输入 prompt、执行元数据以及 Claude Agent SDK 返回的全部消息对象
 
 这些文件用于增量翻译和结果回写，通常不建议提交到 Git。
 
