@@ -16,7 +16,7 @@
 │                                                          │
 │   只做文件操作，不做翻译，不拼 prompt                       │
 └──────────────────────────┬───────────────────────────────┘
-                           │ claude --print -p "..."
+                           │ Claude Agent SDK query(...)
                            │ （单次调用，所有语言打包）
                            ▼
 ┌──────────────────────────────────────────────────────────┐
@@ -55,13 +55,13 @@
 1. **翻译质量**：CC 的 agent 推理（多文件交叉引用、上下文关联）远超单次 API 调用
 2. **不重复造轮子**：CC 已有的 skills 加载、渐进式上下文、工具调用全部复用
 3. **渐进提升**：skills 文件越积累翻译质量越高，CC 自动利用历史翻译保持一致性
-4. **自动化**：`claude --print` 是无交互模式，可直接用于 cron/CI/CD
+4. **自动化**：Claude Agent SDK 可直接嵌入 Python，适合 CLI / cron / CI/CD
 
 ---
 
 ## 二、两种使用模式
 
-### 2.1 自动化模式（`claude --print`）
+### 2.1 自动化模式（Claude Agent SDK）
 
 ```bash
 # 可在 cron / CI/CD / git hook 中运行，无需人工
@@ -70,7 +70,7 @@ trans translate
 
 内部执行：
 ```bash
-claude --print -p "读取 .trans/task.json，使用你的翻译 skills 完成所有语言的翻译"
+通过 Claude Agent SDK 在 Python 中直接调用 agent，读取 `.trans/task.json` 并完成翻译
 ```
 
 - 所有目标语言打包在一个 task.json 中，CC 一次处理，**一次冷启动**
@@ -283,11 +283,7 @@ def call_claude(project_dir: Path):
         "(terminology、style、domain) 完成所有语言的翻译，"
         "将结果写入 .trans/result.json。"
     )
-    subprocess.run(
-        ["claude", "--print", "-p", prompt],
-        cwd=str(project_dir),
-        check=True,
-    )
+    run_claude_translation(project_dir, prompt, console)
 ```
 
 ### 3.11 CLI 命令
@@ -393,7 +389,7 @@ Python 层                                    CC Agent
        "ja": { "items": {...}, "existing_translations": {...} }
      }
    }
-                       ──→  6. claude --print (单次调用)
+                       ──→  6. Claude Agent SDK (单次调用)
                             7. CC 读取 task.json
                             8. CC 加载 skills
                             9. CC 读取已有翻译、缓存

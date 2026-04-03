@@ -7,7 +7,8 @@
 ## 要求
 
 - Python 3.9+
-- 已安装 Claude Code CLI，并且 `claude` 命令可用
+- 已安装 `claude-agent-sdk`
+- 已配置 `ANTHROPIC_API_KEY`
 - 当前目录或目标项目目录中允许 Claude Code 读写翻译文件
 
 ## 安装
@@ -22,6 +23,12 @@ pip install -e .
 
 ```bash
 trans --help
+```
+
+如果你是手动安装依赖，也可以直接执行：
+
+```bash
+pip install claude-agent-sdk
 ```
 
 ## 项目准备
@@ -179,7 +186,7 @@ trans status
 
 - 扫描和对比 i18n 文件
 - 生成标准化任务文件
-- 调用 `claude --print`
+- 调用 Claude Agent SDK
 - 让 Claude Code 结合 `.claude/skills/` 中的术语、风格和领域知识完成翻译
 
 因此翻译质量主要取决于：
@@ -211,4 +218,8 @@ trans translate --force
 
 ## 说明
 
-如果你希望看到 Claude Code 的实时输出，请确保本地 `claude` CLI 可正常执行，并已完成登录认证。
+如果你希望正常运行翻译，请确保：
+
+- 已安装 `claude-agent-sdk`
+- 环境中已配置 `ANTHROPIC_API_KEY`
+- Claude Code 相关项目配置和 `.claude/skills/` 可被当前项目读取

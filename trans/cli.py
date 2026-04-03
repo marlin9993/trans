@@ -1,5 +1,4 @@
 import json
-import subprocess
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -15,6 +14,7 @@ from .config import find_project_dir, load_config, save_config, CONFIG_FILENAME
 from .models import ProjectConfig
 from .scanner import flatten, unflatten, scan_i18n_files, load_translations, save_translations
 from .differ import compute_diff
+from .executor import run_claude_translation
 from .snapshot import load_snapshot, save_snapshot, load_prev_translation, save_prev_translation
 from .task import generate_task, write_task_file, parse_result_file
 from .writer import merge_and_write
@@ -237,37 +237,13 @@ def translate(ctx, source_lang, target_langs, force, dry_run):
         "将结果写入 .trans/result.json。"
     )
     console.print(f"\n[bold]调用 Claude Code...[/bold]\n")
-    cmd = [
-        "claude",
-        "--print",
-        "--output-format", "stream-json",
-        "--include-partial-messages",
-        "--verbose",
-        "-p", prompt,
-        "--permission-mode", "bypassPermissions",
-    ]
-    console.print(f"[dim]执行: {' '.join(cmd)}[/dim]")
+    console.print("[dim]执行器: Claude Agent SDK[/dim]")
     console.print(f"[dim]工作目录: {project_dir}[/dim]\n")
 
-    proc = subprocess.Popen(
-        cmd,
-        cwd=str(project_dir),
-        text=True,
-        bufsize=1,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-
-    # 实时透传 CC 输出。stream-json 模式下每行都是一条事件，原样打印避免吞掉进度。
-    if proc.stdout:
-        for raw_line in proc.stdout:
-            line = raw_line.rstrip("\n")
-            if line:
-                console.print(line)
-
-    proc.wait()
-    if proc.returncode != 0:
-        console.print(f"[red]Claude Code 执行失败 (exit code {proc.returncode})[/red]")
+    try:
+        run_claude_translation(project_dir, prompt, console)
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
         return
 
     # 解析结果
