@@ -1,0 +1,40 @@
+{
+  "common": {
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "copy": "Kopieren",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "paste": "Einfügen",
+    "reset": "Zurücksetzen",
+    "save": "Speichern",
+    "search": "Suchen",
+    "submit": "Absenden"
+  },
+  "error": {
+    "network": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "not_found": "Seite nicht gefunden",
+    "permission": "Keine Berechtigung für diesen Vorgang",
+    "required": "Dieses Feld ist erforderlich"
+  },
+  "order": {
+    "detail": "Bestelldetails",
+    "empty": "Keine Bestellungen vorhanden",
+    "refund": "Rückerstattung",
+    "status": {
+      "completed": "Abgeschlossen",
+      "pending": "Zahlung ausstehend",
+      "refunded": "Erstattet",
+      "shipped": "Versendet"
+    },
+    "total": "{count} Artikel insgesamt"
+  },
+  "user": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "password": "Passwort",
+    "profile": "Profil",
+    "settings": "Kontoeinstellungen",
+    "username": "Benutzername"
+  }
+}

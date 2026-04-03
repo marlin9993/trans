@@ -47,4 +47,28 @@ def parse_result_file(path: Path) -> TranslationResult:
         raise FileNotFoundError(f"翻译结果文件不存在: {path}")
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return TranslationResult(**data)
+
+    # 兼容两种结果格式：
+    # 1. 旧格式：{"results": {"en": {"translations": {...}}}}
+    # 2. 当前 SDK 常见格式：{"en": {"a.b": "..."}, "ja": {...}}
+    if "results" in data and isinstance(data["results"], dict):
+        return TranslationResult(**data)
+
+    normalized_results = {}
+    for lang, lang_data in data.items():
+        if not isinstance(lang_data, dict):
+            continue
+
+        if "translations" in lang_data:
+            normalized_results[lang] = lang_data
+            continue
+
+        # 顶层语言对象直接是 dot-path -> 译文
+        if all(isinstance(k, str) and isinstance(v, str) for k, v in lang_data.items()):
+            normalized_results[lang] = {
+                "translations": lang_data,
+                "notes": None,
+                "missing_terms": None,
+            }
+
+    return TranslationResult(results=normalized_results)

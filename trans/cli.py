@@ -1,5 +1,6 @@
 import json
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -28,6 +29,7 @@ CLAUDE_DIR = Path(".claude")
 CLAUDE_SKILLS_DIR = CLAUDE_DIR / "skills"
 CLAUDE_COMMANDS_DIR = CLAUDE_DIR / "commands"
 CACHE_DIR = Path(".trans_cache")
+LOGS_DIR = TRANS_DIR / "logs"
 
 
 def _find_project(project: str) -> Path:
@@ -162,8 +164,9 @@ def scan(ctx):
 @click.option("--target-langs", "-t", default=None, help="指定目标语言（逗号分隔）")
 @click.option("--force", is_flag=True, help="全量重翻（忽略增量 diff）")
 @click.option("--dry-run", is_flag=True, help="预览待翻译内容，不调用 CC")
+@click.option("--raw-events", is_flag=True, help="终端打印 Claude Agent SDK 原始事件 JSON")
 @click.pass_context
-def translate(ctx, source_lang, target_langs, force, dry_run):
+def translate(ctx, source_lang, target_langs, force, dry_run, raw_events):
     """执行翻译（调用 Claude Code）"""
     project_dir = _find_project(ctx.obj["project"])
     config = load_config(project_dir)
@@ -239,9 +242,20 @@ def translate(ctx, source_lang, target_langs, force, dry_run):
     console.print(f"\n[bold]调用 Claude Code...[/bold]\n")
     console.print("[dim]执行器: Claude Agent SDK[/dim]")
     console.print(f"[dim]工作目录: {project_dir}[/dim]\n")
+    log_file = project_dir / LOGS_DIR / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}.jsonl"
+    console.print(f"[dim]审计日志: {log_file.relative_to(project_dir)}[/dim]")
+    if raw_events:
+        console.print("[dim]终端输出: 原始事件 JSON[/dim]")
+    console.print()
 
     try:
-        run_claude_translation(project_dir, prompt, console)
+        run_claude_translation(
+            project_dir,
+            prompt,
+            console,
+            raw_events=raw_events,
+            log_path=log_file,
+        )
     except RuntimeError as exc:
         console.print(f"[red]{exc}[/red]")
         return

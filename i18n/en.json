@@ -1,0 +1,40 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "copy": "Copy",
+    "delete": "Delete",
+    "edit": "Edit",
+    "paste": "Paste",
+    "reset": "Reset",
+    "save": "Save",
+    "search": "Search",
+    "submit": "Submit"
+  },
+  "error": {
+    "network": "Network error. Please check your connection and try again.",
+    "not_found": "Page not found",
+    "permission": "No permission to perform this action",
+    "required": "This field is required"
+  },
+  "order": {
+    "detail": "Order Details",
+    "empty": "No orders yet",
+    "refund": "Refund",
+    "status": {
+      "completed": "Completed",
+      "pending": "Pending Payment",
+      "refunded": "Refunded",
+      "shipped": "Shipped"
+    },
+    "total": "{count} items in total"
+  },
+  "user": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "password": "Password",
+    "profile": "Profile",
+    "settings": "Account Settings",
+    "username": "Username"
+  }
+}

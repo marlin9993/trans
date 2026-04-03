@@ -1,10 +1,38 @@
 import asyncio
+import json
 from pathlib import Path
+from typing import Any, Optional
 
 from rich.console import Console
 
 
-def run_claude_translation(project_dir: Path, prompt: str, console: Console) -> None:
+def _serialize_message(message: Any) -> dict:
+    if hasattr(message, "model_dump"):
+        data = message.model_dump()
+        if isinstance(data, dict):
+            data.setdefault("_message_type", type(message).__name__)
+            return data
+
+    if hasattr(message, "event"):
+        return {
+            "_message_type": type(message).__name__,
+            "event": getattr(message, "event"),
+        }
+
+    result = {"_message_type": type(message).__name__}
+    for attr in ("result", "is_error", "session_id", "subtype", "type"):
+        if hasattr(message, attr):
+            result[attr] = getattr(message, attr)
+    return result
+
+
+def run_claude_translation(
+    project_dir: Path,
+    prompt: str,
+    console: Console,
+    raw_events: bool = False,
+    log_path: Optional[Path] = None,
+) -> None:
     """Run translation via Claude Agent SDK."""
     try:
         from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
@@ -25,49 +53,70 @@ def run_claude_translation(project_dir: Path, prompt: str, console: Console) -> 
 
         saw_text = False
         in_text_block = False
+        log_file = None
 
-        async for message in query(prompt=prompt, options=options):
-            if isinstance(message, StreamEvent):
-                event = message.event
-                event_type = event.get("type")
+        if log_path is not None:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_file = log_path.open("w", encoding="utf-8")
 
-                if event_type == "content_block_start":
-                    block = event.get("content_block", {})
-                    if block.get("type") == "tool_use":
-                        if in_text_block:
-                            console.file.write("\n")
-                            console.file.flush()
-                            in_text_block = False
-                        tool_name = block.get("name", "unknown")
-                        console.print(f"[dim][tool][/dim] {tool_name}")
+        try:
+            async for message in query(prompt=prompt, options=options):
+                serialized = _serialize_message(message)
+                if log_file is not None:
+                    log_file.write(json.dumps(serialized, ensure_ascii=False) + "\n")
+                    log_file.flush()
 
-                elif event_type == "content_block_delta":
-                    delta = event.get("delta", {})
-                    if delta.get("type") == "text_delta":
-                        text = delta.get("text", "")
-                        if text:
-                            console.file.write(text)
-                            console.file.flush()
-                            saw_text = True
-                            in_text_block = True
+                if raw_events:
+                    if in_text_block:
+                        console.file.write("\n")
+                        console.file.flush()
+                        in_text_block = False
+                    console.print_json(data=serialized)
 
-                elif event_type == "message_stop" and in_text_block:
-                    console.file.write("\n")
-                    console.file.flush()
-                    in_text_block = False
+                if isinstance(message, StreamEvent):
+                    event = message.event
+                    event_type = event.get("type")
 
-                continue
+                    if not raw_events and event_type == "content_block_start":
+                        block = event.get("content_block", {})
+                        if block.get("type") == "tool_use":
+                            if in_text_block:
+                                console.file.write("\n")
+                                console.file.flush()
+                                in_text_block = False
+                            tool_name = block.get("name", "unknown")
+                            console.print(f"[dim][tool][/dim] {tool_name}")
 
-            if isinstance(message, ResultMessage):
-                if in_text_block:
-                    console.file.write("\n")
-                    console.file.flush()
-                    in_text_block = False
+                    elif not raw_events and event_type == "content_block_delta":
+                        delta = event.get("delta", {})
+                        if delta.get("type") == "text_delta":
+                            text = delta.get("text", "")
+                            if text:
+                                console.file.write(text)
+                                console.file.flush()
+                                saw_text = True
+                                in_text_block = True
 
-                if message.result and not saw_text:
-                    console.print(message.result)
+                    elif event_type == "message_stop" and in_text_block:
+                        console.file.write("\n")
+                        console.file.flush()
+                        in_text_block = False
 
-                if message.is_error:
-                    raise RuntimeError(message.result or "Claude Agent SDK 执行失败")
+                    continue
+
+                if isinstance(message, ResultMessage):
+                    if in_text_block:
+                        console.file.write("\n")
+                        console.file.flush()
+                        in_text_block = False
+
+                    if message.result and not saw_text and not raw_events:
+                        console.print(message.result)
+
+                    if message.is_error:
+                        raise RuntimeError(message.result or "Claude Agent SDK 执行失败")
+        finally:
+            if log_file is not None:
+                log_file.close()
 
     asyncio.run(_run())

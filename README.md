@@ -6,7 +6,7 @@
 
 ## 要求
 
-- Python 3.9+
+- Python 3.10+
 - 已安装 `claude-agent-sdk`
 - 已配置 `ANTHROPIC_API_KEY`
 - 当前目录或目标项目目录中允许 Claude Code 读写翻译文件
